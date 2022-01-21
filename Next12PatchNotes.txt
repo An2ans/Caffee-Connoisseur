@@ -1,0 +1,10 @@
+target: must be removed as depricated and netlify intalled for serverless connection
+
+use rust compiler (17xtimes faster babel)
+
+
+
+876445
+CA965C
+EEC373
+F4DFBA
