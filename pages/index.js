@@ -3,12 +3,16 @@ import Image from 'next/image';
 import styles from '../styles/Home.module.css';
 import Card from "../components/card.jsx";
 import Banner from "../components/banner.jsx";
-import coffeeStores from "../data/coffee-stores.json";
+import { fetchCoffeeStores } from '../lib/coffee-stores';
+
 
 export async function getStaticProps(context){
+  const coffeeStores = await fetchCoffeeStores();
+  console.log(coffeeStores);    
+  
   return{
     props:{
-      coffeeStores,
+      coffeeStores: coffeeStores,
     },
   };
 }
@@ -16,11 +20,9 @@ export async function getStaticProps(context){
 
 
 export default function Home(props) {
-
   const handleBannerClick = (e) => {
     console.log(e);
   };
-
   return (
     <div className={styles.container}>
       <Head>
