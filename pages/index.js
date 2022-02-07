@@ -5,7 +5,8 @@ import Card from "../components/card.jsx";
 import Banner from "../components/banner.jsx";
 import { fetchCoffeeStores } from '../lib/coffee-stores';
 import useTrackLocation from '../lib/use-track-location';
-import { useEffect } from 'react';
+import { useEffect, useState, useContext } from 'react';
+import { ACTION_TYPES, StoreContext } from '../store/store-context';
 
 
 export async function getStaticProps(context){
@@ -21,15 +22,30 @@ export async function getStaticProps(context){
 
 export default function Home(props) {
 
-  const {handleTrackLocation, latLong, errorMsg, isFinding} = useTrackLocation();
+  const {handleTrackLocation, errorMsg, isFinding} = useTrackLocation();
+
+  // const [coffeeStores, setCoffeeStores] = useState([]);
+  const [coffeeStoresError, setCoffeeStoresError] = useState(null);
+  const {dispatch, state} = useContext(StoreContext);
+  const {coffeeStores, latLong} = state;
+
+
 
   useEffect(async () => {
     if(latLong){
       try{
         const fetchedCoffeeStores = await fetchCoffeeStores(latLong, 30);
-        console.log({fetchCoffeeStores});
+        console.log({fetchedCoffeeStores});
+        // setCoffeeStores(fetchedCoffeeStores);
+        dispatch({
+          type:ACTION_TYPES.SET_COFFEE_STORES,
+          payload:{
+            coffeeStores: fetchedCoffeeStores
+          }
+        })
       }catch(error){
         console.log({error})
+        setCoffeeStoresError(error.message);
       }
     }
   }, [latLong]);
@@ -54,6 +70,23 @@ export default function Home(props) {
           <Image src="/coffee.png" alt="coffee" width={300} height={200} />
         </div>
         {errorMsg && <p>Something went wrong: {errorMsg} </p>}
+        {coffeeStoresError && <p>Something went wrong: {coffeeStoresError} </p>}
+
+
+        <div className={styles.sectionWrapper}>
+          {coffeeStores.length > 0 && (
+            <h2 className={styles.heading2} > Stores near me </h2>
+          )}
+          <div className={styles.cardLayout}>
+            {coffeeStores.map(store => <Card 
+              name={store.name}
+              imgUrl={store.imgUrl || "https://images.unsplash.com/photo-1498804103079-a6351b050096?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2468&q=80"} 
+              href={`/store/${store.id}`}
+              className={styles.card}
+              key={store.id} />
+            )}
+          </div>
+        </div>
         <div className={styles.sectionWrapper}>
           {props.coffeeStores.length > 0 && (
             <h2 className={styles.heading2} > Toronto stores </h2>

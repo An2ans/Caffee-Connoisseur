@@ -1,10 +1,13 @@
 import '../styles/globals.css';
-import Footer from "./footer"
+import Footer from "../components/footer";
+import {StoreProvider} from "../store/store-context";
 
 function MyApp({ Component, pageProps }) {
   return (<div>
-  <Component {...pageProps} />
-  <Footer />
+  <StoreProvider>
+    <Component {...pageProps} />
+    <Footer />
+  </StoreProvider>
   </div>
   );
 };
