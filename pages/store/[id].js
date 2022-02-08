@@ -1,4 +1,4 @@
-import {useRouter} from "next/router";
+import { useRouter } from "next/router";
 import Link from "next/link";
 import Head from "next/head";
 import styles from "../../styles/store.module.css";
@@ -7,99 +7,147 @@ import cls from "classnames";
 import { fetchCoffeeStores } from "../../lib/coffee-stores";
 import { useContext, useEffect, useState } from "react";
 import { StoreContext } from "../../store/store-context";
-import {isEmpty} from "../../lib/utils";
+import { isEmpty } from "../../lib/utils";
 
-export async function getStaticProps({params}){
+export async function getStaticProps({ params }) {
   const coffeeStores = await fetchCoffeeStores();
-  const findCoffeeStoreById = coffeeStores.find( store => {
+  const findCoffeeStoreById = coffeeStores.find((store) => {
     return store.id.toString() === params.id;
   });
-  return{
+  return {
     props: {
-      coffeeStore: findCoffeeStoreById ? findCoffeeStoreById : {}
+      coffeeStore: findCoffeeStoreById ? findCoffeeStoreById : {},
     },
   };
 }
 
-export async function getStaticPaths(){
+export async function getStaticPaths() {
   const coffeeStores = await fetchCoffeeStores();
-  const paths = await coffeeStores.map(store => {
-    return{
+  const paths = await coffeeStores.map((store) => {
+    return {
       params: {
         id: store.id.toString(),
       },
     };
   });
-  return{
+  return {
     paths,
     fallback: true,
   };
 }
 
 const Store = (initialProps) => {
-    console.log({initialProps})
-    const router = useRouter();
-    const id = router.query.id;
+  const router = useRouter();
+  const id = router.query.id;
+  const [coffeeStore, setCoffeeStore] = useState(initialProps.coffeeStore);
+  const {
+    state: { coffeeStores },
+  } = useContext(StoreContext);
 
-    const [coffeeStore, setCoffeeStore] = useState(initialProps.coffeeStore);
+  const handleCreateCoffeeStore = async (coffeeStore) => {
+    try {
+      const { id, name, address, neighborhood, imgUrl, score } = coffeeStore;
+      const response = await fetch("/api/createCoffeeStore", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+          name,
+          address: address || "",
+          neighborhood: neighborhood || "",
+          imgUrl,
+          score: score || 0,
+        }),
+      });
+      const dbCoffeeStore = await response.json();
+    } catch (error) {
+      console.log("error creating coffee store", error);
+    }
+  };
 
-    const {state: { coffeeStores }} = useContext(StoreContext);
-
-
-    useEffect(() => {
-      if (isEmpty(initialProps.coffeeStore)){
-        if(coffeeStores.length >0){
-          const findCoffeeStoreById = coffeeStores.find( store => {
-            return store.id.toString() === id;
-          });
-          setCoffeeStore(findCoffeeStoreById);
+  useEffect(() => {
+    if (isEmpty(initialProps.coffeeStore)) {
+      if (coffeeStores.length > 0) {
+        const coffeeStoreFromContext = coffeeStores.find((store) => {
+          return store.id.toString() === id;
+        });
+        if (coffeeStoreFromContext) {
+          setCoffeeStore(coffeeStoreFromContext);
+          handleCreateCoffeeStore(coffeeStoreFromContext);
         }
       }
-    }, [id])
-
-    const {address, neighborhood, name, imgUrl} = coffeeStore;
-
-    const handleUpvote = () => {
+    } else {
+      //SSG//
+      handleCreateCoffeeStore(initialProps.coffeeStore);
     }
+  }, [id, initialProps, coffeeStores]);
 
-    if(router.isFallback) {
-      return <div>Loading...</div>
-    }
+  const { address, neighborhood, name, imgUrl, score } = coffeeStore;
 
+  const handleUpvote = () => {};
 
-    return (
-      <div className={styles.layout}>
-        <Head>
-          <title>{name}</title>
-        </Head>
-        <div className={styles.container} >
-          <div className={styles.col1}>
-            <Link href="/" className={styles.backToHomeLink} >
-                <a>&#8592; Back to home</a>
-            </Link>
-            <div className={styles.nameWrapper}>
-              <h1 className={styles.name}>{name}</h1>
-            </div>
-            <Image src={imgUrl || "https://images.unsplash.com/photo-1498804103079-a6351b050096?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2468&q=80"} width={600} height={360} className={styles.storeImg} alt={name} />
+  if (router.isFallback) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div className={styles.layout}>
+      <Head>
+        <title>{name}</title>
+      </Head>
+      <div className={styles.container}>
+        <div className={styles.col1}>
+          <Link href="/" className={styles.backToHomeLink}>
+            <a>&#8592; Back to home</a>
+          </Link>
+          <div className={styles.nameWrapper}>
+            <h1 className={styles.name}>{name}</h1>
           </div>
-          <div className={cls(styles.col2, "glass")}>
+          <Image
+            src={
+              imgUrl ||
+              "https://images.unsplash.com/photo-1498804103079-a6351b050096?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2468&q=80"
+            }
+            width={600}
+            height={360}
+            className={styles.storeImg}
+            alt={name}
+          />
+        </div>
+        <div className={cls(styles.col2, "glass")}>
+          <div className={styles.iconWrapper}>
+            <Image
+              src={"/icons/places.svg"}
+              width={24}
+              height={24}
+              alt={address}
+            />
+            <p className={styles.text}>{address}</p>
+          </div>
+          {neighborhood && (
             <div className={styles.iconWrapper}>
-              <Image src={"/icons/places.svg"} width={24} height={24} alt={address} />
-              <p className={styles.text}>{address}</p>
-            </div>
-            {neighborhood && (<div className={styles.iconWrapper}>
-              <Image src={"/icons/nearMe.svg"} width={24} height={24} alt={neighborhood} />
+              <Image
+                src={"/icons/nearMe.svg"}
+                width={24}
+                height={24}
+                alt={neighborhood}
+              />
               <p className={styles.text}>{neighborhood}</p>
-            </div>)}
-            <div className={styles.iconWrapper}>
-              <Image src={"/icons/star.svg"} width={24} height={24} alt="score" />
-              <p className={styles.text}>{1}</p>
             </div>
-            <button className={styles.upvoteButton} onClick={handleUpvote} >Vote now!</button>
+          )}
+          <div className={styles.iconWrapper}>
+            <Image src={"/icons/star.svg"} width={24} height={24} alt="score" />
+            <p className={styles.text}>{score || 0}</p>
           </div>
-        </div>       
+          <button className={styles.upvoteButton} onClick={handleUpvote}>
+            Vote now!
+          </button>
+        </div>
       </div>
-    );
-}
+    </div>
+  );
+};
 
 export default Store;
