@@ -7,9 +7,11 @@ import cls from "classnames";
 import { fetchCoffeeStores } from "../../lib/coffee-stores";
 import { useContext, useEffect, useState } from "react";
 import { StoreContext } from "../../store/store-context";
-import { isEmpty } from "../../lib/utils";
+import { isEmpty, fetcher } from "../../lib/utils";
+import useSWR from "swr";
 
-export async function getStaticProps({ params }) {
+export async function getStaticProps(staticProps) {
+  const params = staticProps.params;
   const coffeeStores = await fetchCoffeeStores();
   const findCoffeeStoreById = coffeeStores.find((store) => {
     return store.id.toString() === params.id;
@@ -23,7 +25,7 @@ export async function getStaticProps({ params }) {
 
 export async function getStaticPaths() {
   const coffeeStores = await fetchCoffeeStores();
-  const paths = await coffeeStores.map((store) => {
+  const paths = coffeeStores.map((store) => {
     return {
       params: {
         id: store.id.toString(),
@@ -58,7 +60,7 @@ const Store = (initialProps) => {
           address: address || "",
           neighborhood: neighborhood || "",
           imgUrl,
-          score: score || 0,
+          score: 0,
         }),
       });
       const dbCoffeeStore = await response.json();
@@ -82,20 +84,57 @@ const Store = (initialProps) => {
       //SSG//
       handleCreateCoffeeStore(initialProps.coffeeStore);
     }
-  }, [id, initialProps, coffeeStores]);
+  }, [id, initialProps.coffeeStore, coffeeStores]);
 
-  const { address, neighborhood, name, imgUrl, score } = coffeeStore;
+  const { address, neighborhood, name, imgUrl } = coffeeStore;
+  const [score, setScore] = useState(0);
 
-  const handleUpvote = () => {};
+  const { data, error } = useSWR(`/api/getCoffeeStoreById?id=${id}`, fetcher);
+
+  useEffect(() => {
+    if (data && data.length > 0) {
+      setCoffeeStore(data[0]);
+
+      setScore(data[0].score);
+    }
+  }, [data]);
+
+  const handleUpvote = async () => {
+    try {
+      const response = await fetch("/api/voteCoffeeStoreById", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+        }),
+      });
+      const dbCoffeeStore = await response.json();
+      if (dbCoffeeStore && dbCoffeeStore.length > 0) {
+        let count = score + 1;
+        setScore(count);
+      }
+    } catch (error) {
+      console.log("error voting coffee store", error);
+    }
+  };
+
+  if (error) {
+    return <div>Something went wrong retrieving coffee store page</div>;
+  }
 
   if (router.isFallback) {
     return <div>Loading...</div>;
   }
 
+  console.log({ coffeeStore });
+
   return (
     <div className={styles.layout}>
       <Head>
         <title>{name}</title>
+        <meta name="description" content={`${name} coffee store`}></meta>
       </Head>
       <div className={styles.container}>
         <div className={styles.col1}>
@@ -139,7 +178,7 @@ const Store = (initialProps) => {
           )}
           <div className={styles.iconWrapper}>
             <Image src={"/icons/star.svg"} width={24} height={24} alt="score" />
-            <p className={styles.text}>{score || 0}</p>
+            <p className={styles.text}>{score}</p>
           </div>
           <button className={styles.upvoteButton} onClick={handleUpvote}>
             Vote now!
