@@ -41,7 +41,9 @@ export async function getStaticPaths() {
 const Store = (initialProps) => {
   const router = useRouter();
   const id = router.query.id;
-  const [coffeeStore, setCoffeeStore] = useState(initialProps.coffeeStore);
+  const [coffeeStore, setCoffeeStore] = useState(
+    initialProps.coffeeStore || {}
+  );
   const {
     state: { coffeeStores },
   } = useContext(StoreContext);
@@ -84,7 +86,7 @@ const Store = (initialProps) => {
       //SSG//
       handleCreateCoffeeStore(initialProps.coffeeStore);
     }
-  }, [id, initialProps.coffeeStore, coffeeStores]);
+  }, [id, initialProps, initialProps.coffeeStore, coffeeStores]);
 
   const { address, neighborhood, name, imgUrl } = coffeeStore;
   const [score, setScore] = useState(0);
@@ -138,8 +140,10 @@ const Store = (initialProps) => {
       </Head>
       <div className={styles.container}>
         <div className={styles.col1}>
-          <Link href="/" className={styles.backToHomeLink}>
-            <a>&#8592; Back to home</a>
+          <Link href="/" passHref>
+            <div className={styles.backToHomeLink}>
+              <a>&#8592; Back to home</a>
+            </div>
           </Link>
           <div className={styles.nameWrapper}>
             <h1 className={styles.name}>{name}</h1>
@@ -158,6 +162,7 @@ const Store = (initialProps) => {
         <div className={cls(styles.col2, "glass")}>
           <div className={styles.iconWrapper}>
             <Image
+              className={styles.icon}
               src={"/icons/places.svg"}
               width={24}
               height={24}

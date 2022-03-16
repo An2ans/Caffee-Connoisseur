@@ -47,7 +47,7 @@ export default function Home(props) {
       }
     }
     fetchCoffeeStores();
-  }, [latLong]);
+  }, [dispatch, latLong]);
 
   const handleBannerClick = (e) => {
     handleTrackLocation();
@@ -77,7 +77,7 @@ export default function Home(props) {
 
         <div className={styles.sectionWrapper}>
           {coffeeStores.length > 0 && (
-            <h2 className={styles.heading2}> Stores near me </h2>
+            <h2 className={styles.heading2}> Stores near me: </h2>
           )}
           <div className={styles.cardLayout}>
             {coffeeStores.map((store) => (
@@ -96,7 +96,7 @@ export default function Home(props) {
         </div>
         <div className={styles.sectionWrapper}>
           {props.coffeeStores.length > 0 && (
-            <h2 className={styles.heading2}> Manchester stores </h2>
+            <h2 className={styles.heading2}> Manchester stores: </h2>
           )}
           <div className={styles.cardLayout}>
             {props.coffeeStores.map((store) => (
